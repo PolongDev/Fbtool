@@ -5,5 +5,5 @@ repo: https://github.com/PolongDev/Fbtool
 cmd:
 
 git clone https://github.com/PolongDev/Fbtool
-cd FB
+cd Fbtool
 python ken.py
