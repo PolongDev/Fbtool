@@ -1,14 +1,13 @@
-import subprocess
-import sys
 import os
 import time
-
+import subprocess
+import sys
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def install_dependencies():
-    dependencies = ['requests', 'beautifulsoup4']
+    dependencies = ['requests', 'bs4', 'webbrowser']
     installed_count = 0
 
     for dep in dependencies:
@@ -32,7 +31,6 @@ def check_dependencies():
     except ImportError:
         return False
 
-
 clear_screen()
 
 if not check_dependencies():
@@ -40,7 +38,6 @@ if not check_dependencies():
     time.sleep(2) 
     clear_screen()
     install_dependencies()
-
 
 import time
 import random
@@ -94,7 +91,7 @@ def get_user_cookie(user_email, user_password):
           return (cookie) 
       else:
           return None
-        
+
 def get_facebook_token(cookie):
   headers = {
       'authority': 'business.facebook.com',
@@ -177,48 +174,54 @@ def perform_share(token_data, post_id, success_counter):
 
 
 def auto_share_on_facebook_post():
-  user_email = input("\n\x1b[1;97mEnter your Facebook Email: \x1b[0m")
-  user_password = input("\x1b[1;97mEnter your Facebook Password: \x1b[0m")
-  user_cookies = get_user_cookie(user_email, user_password)
+    user_email = input("\n\x1b[1;97mEnter your Facebook Email: \x1b[0m")
+    user_password = input("\x1b[1;97mEnter your Facebook Password: \x1b[0m")
+    user_cookies = get_user_cookie(user_email, user_password)
 
-  if not user_cookies:
-      print("\x1b[1;91mInvalid email or password.\x1b[0m")
-      input()
-      return
+    if not user_cookies:
+        print("\x1b[1;91mInvalid email or password.\x1b[0m")
+        input()
+        return
 
-  post_url_to_share = input("\x1b[1;97mEnter the Facebook Post URL to Share: \x1b[0m")
+    post_url_to_share = input("\x1b[1;97mEnter the Facebook Post URL to Share: \x1b[0m")
 
-  post_id = is_post_id(post_url_to_share)
-  if not post_id:
-      print("\x1b[1;91mInvalid post URL.\x1b[0m")
-      input()
-      return
+    post_id = is_post_id(post_url_to_share)
+    if not post_id:
+        print("\x1b[1;91mInvalid post URL.\x1b[0m")
+        input()
+        return
 
-  share_delay = int(input("\x1b[1;97mEnter the Share Delay in seconds: \x1b[0m"))
-  total_shares = int(input("\x1b[1;97mStop the Tool after how many Shares: \x1b[0m"))
+    try:
+        share_delay = int(input("\x1b[1;97mEnter the Share Delay in seconds: \x1b[0m"))
+        total_shares = int(input("\x1b[1;97mStop the Tool after how many Shares: \x1b[0m"))
+    except ValueError:
+        print("\x1b[1;91mError: Please enter a valid number for Share Delay and Total Shares.\x1b[0m")
+        input()
+        return
 
-  facebook_token = get_facebook_token(user_cookies)
-  if not facebook_token:
-      print("\x1b[1;91mError: Cookie is undefined. Press Enter to start again.\x1b[0m")
-      input()
-      return
+    facebook_token = get_facebook_token(user_cookies)
+    if not facebook_token:
+        print("\x1b[1;91mError: Cookie is undefined. Press Enter to start again.\x1b[0m")
+        input()
+        return
 
-  all_tokens = [facebook_token]
+    all_tokens = [facebook_token]
 
-  share_count = 0
-  success_counter = [0]
+    share_count = 0
+    success_counter = [0]
 
-  while share_count < total_shares:
-      for token_data in all_tokens:
-          share_count += 1
-          threading.Thread(target=perform_share, args=(token_data, post_id, success_counter)).start()
-          time.sleep(share_delay)
+    while share_count < total_shares:
+        for token_data in all_tokens:
+            share_count += 1
+            threading.Thread(target=perform_share, args=(token_data, post_id, success_counter)).start()
+            time.sleep(share_delay)
 
-  print(f'\n\x1b[1;92mSUCCESS: Shares Completed ({success_counter[0]}) | Press [Enter] to run again\x1b[0m')
- 
+    print(f'\n\x1b[1;92mSUCCESS: Shares Completed ({success_counter[0]}) | Press [Enter] to run again\x1b[0m')
 
 
-          
+
+
+
 def get_facebook_pages(user_access_token):
     url = 'https://graph.facebook.com/v18.0/me/accounts'
     headers = {
@@ -243,171 +246,281 @@ def extract_user_url(post_url):
       return match.group(1)
   else:
       return None
-    
 
 
 def auto_react_to_facebook_post():
-                    url = input('\n\x1b[1;97mEnter the post URL: \x1b[0m')
-                    user_url = extract_user_url(url)
+    try:
+        url = input('\n\x1b[1;97mEnter the post URL: \x1b[0m')
+        user_url = extract_user_url(url)
 
-                    if not user_url:
-                        print("\x1b[1;91mInvalid post URL.\x1b[0m")
-                        return
+        if not user_url:
+            print("\x1b[1;91mInvalid post URL.\x1b[0m")
+            return
 
-                    token = input('\x1b[1;97mEnter the access token: \x1b[0m')
-                    reaction_type = input('\x1b[1;97mEnter the reaction type (e.g., LIKE, LOVE, HAHA, WOW, SAD, ANGRY): \x1b[0m')
-                    delay_seconds = float(input('\x1b[1;97mEnter the delay between requests (in seconds): \x1b[0m'))
+        token = input('\x1b[1;97mEnter the access token: \x1b[0m')
+        reaction_type = input('\x1b[1;97mEnter the reaction type (e.g., LIKE, LOVE, HAHA, WOW, SAD, ANGRY): \x1b[0m')      
+        delay_seconds = int(input('\x1b[1;97mEnter the delay between requests (in seconds): \x1b[0m'))     
+        comment_text = "<>"
+        comment = comment_text.replace('<>', '\n')
 
-                    comment_text = "<>"
-                    comment = comment_text.replace('<>', '\n')
+        post_id = is_post_id(url)
+        user_id = None  
 
-                    post_id = is_post_id(url)
-                    user_id = None  
+        if not post_id:
+            print("\x1b[1;91mUnable to fetch post ID from the URL.\x1b[0m")
+            return
 
-                    if not post_id:
-                        print("\x1b[1;91mUnable to fetch post ID from the URL.\x1b[0m")
-                        return
+        print("\x1b[1;97mPlease wait...\x1b[0m")
+        time.sleep(5) 
+        user_id = is_post_id(user_url)
 
-                    print("\x1b[1;97mPlease wait...\x1b[0m")
-                    time.sleep(5) 
-                    user_id = is_post_id(user_url)
+        if not user_id:
+            print("\x1b[1;91mUnable to fetch user ID from the URL.\x1b[0m")
+            return
 
-                    if not user_id:
-                        print("\x1b[1;91mUnable to fetch user ID from the URL.\x1b[0m")
-                        return
+        post_url = f'{user_id}_{post_id}'
+        pages_data = get_facebook_pages(token)
 
-                    post_url = f'{user_id}_{post_id}'
-                    pages_data = get_facebook_pages(token)
+        if pages_data:
+            print("\x1b[1;97mAvailable Pages:\x1b[0m")
+            for i, page in enumerate(pages_data):
+                print(f"\x1b[1;92m[{i + 1}]. \x1b[1;97m{page['name']}\x1b[0m")
 
-                    if pages_data:
-                        print("\x1b[1;97mAvailable Pages:\x1b[0m")
-                        for i, page in enumerate(pages_data):
-                          print(f"\x1b[1;92m[{i + 1}]. \x1b[1;97m{page['name']}\x1b[0m")
+            continue_react = input("\x1b[1;97mDo you want to continue reacting? (yes/no): \x1b[0m")
 
-                        continue_react = input("\x1b[1;97mDo you want to continue reacting? (yes/no): \x1b[0m")
+            if continue_react.lower() == 'yes':
+                try:
+                    limit = int(input('\x1b[1;97mEnter the limit for reactions: \x1b[0m'))
+                except ValueError:
+                    print("\x1b[1;91mError: Please enter a valid number for the limit.\x1b[0m")
+                    input()
+                    return
 
-                        if continue_react.lower() == 'yes':
-                            limit = int(input('\x1b[1;97m[•] Enter the limit for reactions: \x1b[0m'))
-                            i = 0
-                            while i < limit:
-                                page = pages_data[i % len(pages_data)]
+                i = 0
+                while i < limit:
+                    page = pages_data[i % len(pages_data)]
 
-                                try:
-                                    response = requests.post(f'https://graph.facebook.com/{post_url}/reactions?type={reaction_type}&access_token={page["accessToken"]}')
-                                    response.raise_for_status()
-                                    print(f"\x1b[1;92mSUCCESS: Given {reaction_type} reaction to {post_url} on behalf of {page['name']}\x1b[0m")
+                    try:
+                        response = requests.post(f'https://graph.facebook.com/{post_url}/reactions?type={reaction_type}&access_token={page["accessToken"]}')
+                        response.raise_for_status()
+                        print(f"\x1b[1;92mSUCCESS: Given {reaction_type} reaction to {post_url} on behalf of {page['name']}\x1b[0m")
 
-                                except requests.RequestException as e:
-                                    print(f"\x1b[1;91mError making request: {e}\x1b[0m")
-                                    print(f"\x1b[1;91mERROR: Failed to give {reaction_type} reaction to {post_url} on behalf of {page['name']}\x1b[0m")
+                    except requests.RequestException as e:
+                        print(f"\x1b[1;91mError making request: {e}\x1b[0m")
+                        print(f"\x1b[1;91mERROR: Failed to give {reaction_type} reaction to {post_url} on behalf of {page['name']}\x1b[0m")
 
-                                i += 1
-                                time.sleep(delay_seconds)
+                    i += 1
+                    time.sleep(delay_seconds)
+    except Exception as ex:
+        print(f"\x1b[1;91mUnhandled Exception: {ex}\x1b[0m")
 
 
 
-       
 
 def display_page_info(page):
             print(f"\n\x1b[1;92mPage information:\x1b[0m")
             print(f"Name: \x1b[1;97m{page['name']}\x1b[0m")
             print(f"Token: \x1b[1;97m{page['accessToken']}\x1b[0m")
 
+
 def auto_comment_on_facebook_post():
-            user_access_token = input('\n\x1b[1;97mEnter Facebook Access Token: \x1b[0m')
-            post_id = input('\x1b[1;97mEnter Post URL: \x1b[0m')
-            comment_text = input('\x1b[1;97mEnter Comment: \x1b[0m')
-            delay_seconds = float(input('\x1b[1;97mEnter Delay between requests (in seconds): \x1b[0m'))
+    try:
+        user_access_token = input('\n\x1b[1;97mEnter Facebook Access Token: \x1b[0m')
+        post_id = input('\x1b[1;97mEnter Post URL: \x1b[0m')
+        comment_text = input('\x1b[1;97mEnter Comment: \x1b[0m')
+        delay_seconds = int(input('\x1b[1;97mEnter Delay between requests (in seconds): \x1b[0m'))
+        comment = comment_text.replace('<>', '\n')
+        pages_data = get_facebook_pages(user_access_token)
 
-            comment = comment_text.replace('<>', '\n')
-            pages_data = get_facebook_pages(user_access_token)
+        post_url = is_post_id(post_id)
 
-            post_url = is_post_id(post_id)
+        if not post_url:
+            print(f"\x1b[1;91mInvalid post URL.\x1b[0m")
+            return
 
-            if not post_url:
-                print(f"\x1b[1;91mInvalid post URL.\x1b[0m")
-                return
+        if pages_data:
+            print("\x1b[1;97mAvailable Pages:\x1b[0m")
+            for i, page in enumerate(pages_data):
+                print(f"\x1b[1;92m[{i + 1}]. \x1b[1;97m{page['name']}\x1b[0m")
 
-            if pages_data:
-                print("\x1b[1;97mAvailable Pages:\x1b[0m")
-                for i, page in enumerate(pages_data):
-                    print(f"\x1b[1;92m[{i + 1}]. \x1b[1;97m{page['name']}\x1b[0m")
+            continue_comment = input("\x1b[1;97mDo you want to continue commenting? (yes/no): \x1b[0m")
 
-                continue_comment = input("\x1b[1;97mDo you want to continue commenting? (yes/no): \x1b[0m")
+            if continue_comment.lower() == 'yes':
+                try:
+                    limit = int(input('\x1b[1;97mEnter the limit for comment: \x1b[0m'))
+                except ValueError:
+                    print("\x1b[1;91mError: Please enter a valid integer for the limit.\x1b[0m")
+                    input()
+                    return
 
-                if continue_comment.lower() == 'yes':
-                    limit = int(input('\x1b[1;97m[•] Enter the limit for comment: \x1b[0m'))
-                    i = 0
-                    while i < limit:
-                        page = pages_data[i % len(pages_data)]
-                        display_page_info(page)
-                        print(f"\n\x1b[1;97m[•] Processing {i + 1}\x1b[0m")
-                        try:
-                            response = requests.post(f'https://graph.facebook.com/{post_url}/comments', params={'message': comment, 'access_token': page['accessToken']})
+                i = 0
+                while i < limit:
+                    page = pages_data[i % len(pages_data)]
+                    display_page_info(page)
+                    print(f"\n\x1b[1;97m[•] Processing {i + 1}\x1b[0m")
 
-                            if response.status_code == 200:
-                                print(f'\x1b[1;92mSuccessfully commented on post: {post_id} (Page: {page["name"]})\x1b[0m')
-                            else:
-                                print(f'\x1b[1;91mFailed to post comment on post: {post_id} (Page: {page["name"]})\x1b[0m')
-                                print(f'\x1b[1;91mError message: {response.text}\x1b[0m')
+                    try:
+                        response = requests.post(f'https://graph.facebook.com/{post_url}/comments', params={'message': comment, 'access_token': page['accessToken']})
 
-                        except Exception as e:
-                            print(f"\x1b[1;91mAn error occurred: {str(e)}\x1b[0m")
+                        if response.status_code == 200:
+                            print(f'\x1b[1;92mSuccessfully commented on post: {post_id} (Page: {page["name"]})\x1b[0m')
+                        else:
+                            print(f'\x1b[1;91mFailed to post comment on post: {post_id} (Page: {page["name"]})\x1b[0m')
+                            print(f'\x1b[1;91mError message: {response.text}\x1b[0m')
 
-                        i += 1
-                        time.sleep(delay_seconds)
+                    except Exception as e:
+                        print(f"\x1b[1;91mAn error occurred: {str(e)}\x1b[0m")
 
-                    print("\n\x1b[1;97m[•] Finished! Commented on all available pages.\x1b[0m")
+                    i += 1
+                    time.sleep(delay_seconds)
+
+                print("\n\x1b[1;97m[•] Finished! Commented on all available pages.\x1b[0m")
+    except Exception as ex:
+        print(f"\x1b[1;91mUnhandled Exception: {ex}\x1b[0m")
 
 def auto_follow_facebook_user():
-  token = input('\n\x1b[1;97mEnter the access token: \x1b[0m')
-  user_url = input('\x1b[1;97mEnter the profile URL of the user you want to follow: \x1b[0m')
+    token = input('\n\x1b[1;97mEnter the access token: \x1b[0m')
+    user_url = input('\x1b[1;97mEnter the profile URL of the user you want to follow: \x1b[0m')
 
-  user_id = is_post_id(user_url)
-  if not user_id:
-      print("\x1b[1;91mInvalid user URL.\x1b[0m")
+    user_id = is_post_id(user_url)
+    if not user_id:
+        print("\x1b[1;91mInvalid user URL.\x1b[0m")
+        return
+
+    try:
+        delay_seconds = int(input('\x1b[1;97mEnter the delay between requests (in seconds): \x1b[0m'))
+    except ValueError:
+        print("\x1b[1;91mError: Please enter a valid number value for delay.\x1b[0m")
+        return
+
+    pages_data = get_facebook_pages(token)
+
+    if pages_data:
+        print("\x1b[1;97mAvailable Pages:\x1b[0m")
+        for i, page in enumerate(pages_data):
+            print(f"\x1b[1;92m[{i + 1}]. \x1b[1;97m{page['name']}\x1b[0m")
+
+        continue_follow = input("\x1b[1;97mDo you want to continue follow? (yes/no): \x1b[0m")
+
+        if continue_follow.lower() == 'yes':
+            try:
+                limit = int(input('\x1b[1;97mEnter the limit for follows: \x1b[0m'))
+            except ValueError:
+                print("\x1b[1;91mError: Please enter a valid number for the limit.\x1b[0m")
+                input()
+                return
+
+            i = 0
+            while i < limit:
+                page = pages_data[i % len(pages_data)]
+
+                try:
+                    url = f'https://graph.facebook.com/v18.0/{user_id}/subscribers'
+                    headers = {'Authorization': f'Bearer {page["accessToken"]}'}
+
+                    response = requests.post(url, headers=headers, json={})
+                    response.raise_for_status()
+                    print(f"\x1b[1;92mSUCCESS: Followed user {user_id} on behalf of {page['name']}\x1b[0m")
+
+                except requests.RequestException as e:
+                    print(f"\x1b[1;91mError making request: {e}\x1b[0m")
+                    print(f"\x1b[1;91mERROR: Failed to follow user {user_id} on behalf of {page['name']}\x1b[0m")
+
+                i += 1
+                time.sleep(delay_seconds)
+
+def auto_create_page():
+ # print('\n\x1b[1;92m[01]\x1b[0m \x1b[1;97mLogin with email and password\x1b[0m')
+  print('\x1b[1;92m[01]\x1b[0m \x1b[1;97mLogin with cookies\x1b[0m')
+
+  choice = input("\n\x1b[1;97mChoose login method (1): \x1b[0m")
+
+  #if choice == '1':
+   #   user_email = input("\n\x1b[1;97mEnter your Facebook Email: \x1b[0m")
+    #  user_password = input("\x1b[1;97mEnter your Facebook Password: \x1b[0m")
+     # cookie = get_user_cookie(user_email, user_password) 
+
+    #  if not cookie:
+   #       print("\x1b[1;91mInvalid email or password.\x1b[0m")
+    #      input()
+    #      return
+
+  if choice == '1':
+      print('\n\x1b[1;92m[ Example ]:\x1b[0m \x1b[1;97msb=vZK3ZAkr0Kot9RZYsdOinHjU; datr=vZK3ZJdCak5gObgvXuIv6448; m_ls=%7B%22c%22%3A%7B%221%22%3A%22HCwAABb495wZFtiA0fkIEwUW1OeTx_nBLQA%22%2C%222%22%3A%22GSwVQBxMAAAWBhby0LzLDBYAABV-HEwAABYAFobRvMsMFgAAFigA%22%7D%2C%22d%22%3A%221c7bf43b-22bf-4350-8080-d8409846bfbe%22%2C%22s%22%3A%220%22%2C%22u%22%3A%22nwromx%22%7D; vpd=v1%3B532x503x2; wl_cbv=v2%3Bclient_version%3A2371%3Btimestamp%3A1701584166; locale=en_US; c_user=100079335822323; xs=7%3AZ70UU0CExWpjnQ%3A2%3A1704136661%3A-1%3A7865; fr=1O4M6scyTd8S7r38e.AWVjT7fNVXSzIReLCeqBvtUNTRM.Blkw4Q.ju.AAA.0.0.Blkw_X.AWXDIrTRrOo; presence=C%7B%22t3%22%3A%5B%5D%2C%22utc3%22%3A1704191003022%2C%22v%22%3A1%7D; wd=782x607\x1b[0m')
+      cookie = input("\n\x1b[1;97mEnter your cookie: \x1b[0m")
+     
+  else:
+      print("\x1b[1;91mInvalid choice. Please choose 1 or 2.\x1b[0m")
       return
 
-  delay_seconds = float(input('\x1b[1;97mEnter the delay between requests (in seconds): \x1b[0m'))
+  try:
+      quantity = int(input('\x1b[1;97mEnter how many pages you want to create: \x1b[0m'))
+      delay = int(input('\x1b[1;97mEnter the delay in seconds for requests: \x1b[0m'))
+  except ValueError:
+      print('\x1b[1;91mError: Please enter a valid number for quantity and delay.\x1b[0m')
+      input()
+      return
 
-  pages_data = get_facebook_pages(token)
+  try:
+      user_id = cookie.split('c_user=')[1].split(';')[0]
+      user_data = requests.get(f'https://mbasic.facebook.com/profile.php?id={user_id}', headers={'cookie': cookie}).text
+      fb_dtsg = user_data.split('<input type="hidden" name="fb_dtsg" value="')[1].split('"')[0]
+      jazoest = user_data.split('<input type="hidden" name="jazoest" value="')[1].split('"')[0]
 
-  if pages_data:
-      print("\x1b[1;97mAvailable Pages:\x1b[0m")
-      for i, page in enumerate(pages_data):
-          print(f"\x1b[1;92m[{i + 1}]. \x1b[1;97m{page['name']}\x1b[0m")
+      i = 1
+      while i <= quantity:
+          page_name = requests.get('https://name.altthenaiz.repl.co/').json()['name']
 
-      continue_follow = input("\x1b[1;97mDo you want to continue follow? (yes/no): \x1b[0m")
+          headers = {
+              'cookie': cookie,
+              'referer': 'https://www.facebook.com/pages/creation/?ref_type=launch_point',
+              'sec-ch-prefers-color-scheme': 'light',
+              'sec-ch-ua': '"Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"',
+              'sec-ch-ua-full-version-list': '"Not_A Brand";v="99.0.0.0", "Google Chrome";v="109.0.5414.120", "Chromium";v="109.0.5414.120"',
+              'sec-ch-ua-mobile': '?0',
+              'sec-ch-ua-platform': '"Windows"',
+              'sec-ch-ua-platform-version': '"0.1.0"',
+              'sec-fetch-dest': 'empty',
+              'sec-fetch-mode': 'cors',
+              'sec-fetch-site': 'same-origin',
+              'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+              'x-asbd-id': '198387',
+              'x-fb-friendly-name': 'AdditionalProfilePlusEditMutation',
+              'x-fb-lsd': 'VvOG1zo3ie0zBti8fQ6zUf'
+          }
 
-      if continue_follow.lower() == 'yes':
-          limit = int(input('[•] Enter the limit for follows: '))
-          i = 0
-          while i < limit:
-              page = pages_data[i % len(pages_data)]
+          data = {
+              'fb_dtsg': fb_dtsg,
+              'jazoest': jazoest,
+              'fb_api_caller_class': 'RelayModern',
+              'fb_api_req_friendly_name': 'AdditionalProfilePlusCreationMutation',
+              'variables': '{"input":{"bio":"","categories":["1062586164506537"],"creation_source":"comet","name":"%s","page_referrer":"launch_point","actor_id":"100037533160611","client_mutation_id":"2"}}' % (page_name),
+              'server_timestamps': 'true',
+              'doc_id': '5296879960418435'
+          }
 
-              try:
-                  url = f'https://graph.facebook.com/v18.0/{user_id}/subscribers'
-                  headers = {'Authorization': f'Bearer {page["accessToken"]}'}
+          try:
+              response = requests.post('https://www.facebook.com/api/graphql/', headers=headers, data=data).json()
 
-                  response = requests.post(url, headers=headers, json={})
-                  response.raise_for_status()
-                  print(f"\x1b[1;92mSUCCESS: Followed user {user_id} on behalf of {page['name']}\x1b[0m")
+              if 'data' in response and 'additional_profile_plus_create' in response['data']:
+                  page_id = response['data']['additional_profile_plus_create']['additional_profile']['id']
+                  print(f'\x1b[1;92mSuccessfully created page with name: {page_name}\x1b[0m')
+                  print(f'\x1b[1;92mID: {page_id}\x1b[0m')
 
-              except requests.RequestException as e:
-                  print(f"\x1b[1;91mError making request: {e}\x1b[0m")
-                  print(f"\x1b[1;91mERROR: Failed to follow user {user_id} on behalf of {page['name']}\x1b[0m")
+          except:
+              print('\x1b[1;91mError: Unable to create page. Please check for Facebook limitations or blocking. Retry later\x1b[0m')
 
-              i += 1
-              time.sleep(delay_seconds)
+          i += 1
+          time.sleep(delay)
+
+  except:
+      print('\x1b[1;91mInvalid Cookies later\x1b[0m')
 
 
-
-
-    
 
 if __name__ == "__main__":
       try:
-       
+
               while True:
                 print('\n\x1b[1;92m                █████╗ ██╗███████╗           \x1b[0m')
                 print('\x1b[1;92m               ██╔══██╗██║╚══███╔╝          \x1b[0m')
@@ -416,8 +529,8 @@ if __name__ == "__main__":
                 print('\x1b[1;92m               ██║  ██║██║███████╗          \x1b[0m')
                 print('\x1b[1;92m               ╚═╝  ╚═╝╚═╝╚══════╝          \x1b[0m')
                 print('\n\x1b[1;92m' + '-' * 50 + '\x1b[0m')
-                print('\n\x1b[1;92mOwner     :\x1b[0m \x1b[1;97mKen\x1b[0m ')
-                print('\x1b[1;92mFacebook  :\x1b[0m \x1b[1;97mfacebook.com/kenneth.ken\x1b[0m ')
+                print('\n\x1b[1;92mOwner     :\x1b[0m \x1b[1;97mAiz\x1b[0m ')
+                print('\x1b[1;92mFacebook  :\x1b[0m \x1b[1;97mfacebook.com/intel.aiz\x1b[0m ')
                 print('\x1b[1;92mTool Type :\x1b[0m \x1b[1;97mFacebook Manager\x1b[0m ')
                 print('\x1b[1;92mVersion   :\x1b[0m \x1b[1;97m1.0\x1b[0m ')
                 print('\n\x1b[1;92m' + '-' * 50 + '\x1b[0m')
@@ -425,9 +538,10 @@ if __name__ == "__main__":
                 print('\x1b[1;92m[02]\x1b[0m \x1b[1;97mAuto Comment on Facebook Post (page)\x1b[0m')
                 print('\x1b[1;92m[03]\x1b[0m \x1b[1;97mAuto Share on Facebook Post (user)\x1b[0m')
                 print('\x1b[1;92m[04]\x1b[0m \x1b[1;97mAuto Follow Facebook Account (page)\x1b[0m')
-                print('\x1b[1;92m[05]\x1b[0m \x1b[1;97mExit\x1b[0m')
+                print('\x1b[1;92m[05]\x1b[0m \x1b[1;97mAuto Create Page (user)\x1b[0m')
+                print('\x1b[1;92m[06]\x1b[0m \x1b[1;97mExit\x1b[0m')
 
-                operation_choice = input("\n\x1b[1mEnter your operation choice: \x1b[0m")
+                operation_choice = input("\n\x1b[1mChoose operation you want (1, 2, 3, 4, 5, 6): \x1b[0m")
 
                 if operation_choice == '1':
                       auto_react_to_facebook_post()
@@ -436,12 +550,13 @@ if __name__ == "__main__":
                 elif operation_choice == '3':
                       auto_share_on_facebook_post()
                 elif operation_choice == '4':
-                     auto_follow_facebook_user()
+                      auto_follow_facebook_user()
                 elif operation_choice == '5':
+                      auto_create_page()
+                elif operation_choice == '6':
                       sys.exit()
                 else:
                       print("\x1b[1;97mInvalid choice. Please choose again.\x1b[0m")
 
       except KeyboardInterrupt:
         print("\x1b[1;91m\n[×] Input canceled. Exiting\x1b[0m")
-    
